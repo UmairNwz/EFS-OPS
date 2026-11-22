@@ -197,7 +197,7 @@ input,select{font-family:inherit}
   <span class="topbar-subtitle">Operations Dashboard</span>
   <div class="topbar-right">
     <div class="live-dot"></div>
-    <span class="topbar-meta">Data through Nov 21 · updated hourly</span>
+    <span class="topbar-meta">Data through Nov 22 · updated hourly</span>
   </div>
 </div>
 
@@ -408,7 +408,8 @@ const ALL = [
   {d:"2026-11-18",t:3291,dr:776,g:1515815},
   {d:"2026-11-19",t:3467,dr:781,g:1643058},
   {d:"2026-11-20",t:3202,dr:729,g:1628710},
-  {d:"2026-11-21",t:3090,dr:714,g:1559957}
+  {d:"2026-11-21",t:3094,dr:714,g:1562365},
+  {d:"2026-11-22",t:2615,dr:611,g:1375096}
 ];
 const IDX = {}; ALL.forEach(r=>IDX[r.d]=r);
 
@@ -446,7 +447,7 @@ function dowName(s){
 /* ━━ STATE ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
 let mode   = 'week';
 let anchor = getMonday('2026-11-16'); // Mon of latest week with data
-let cStart = '2026-09-01', cEnd = '2026-11-21';
+let cStart = '2026-09-01', cEnd = '2026-11-22';
 
 /* ━━ PERIOD SELECTION ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
 function getPeriod(){
@@ -507,7 +508,7 @@ function setMode(m){
   mode=m;
   if(m==='week')  anchor=getMonday('2026-11-16');
   if(m==='month') anchor='2026-11-01';
-  if(m==='day')   anchor='2026-11-21';
+  if(m==='day')   anchor='2026-11-22';
   if(m==='3m')    {};
   document.querySelectorAll('.mode-btn').forEach((b,i)=>{
     b.classList.toggle('active', ['day','week','month','3m','custom'][i]===m);
