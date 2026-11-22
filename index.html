@@ -76,6 +76,7 @@ input,select{font-family:inherit}
 .nav-arrow{padding:5px 10px;color:var(--fg2);font-size:14px;transition:background .15s}
 .nav-arrow:hover{background:var(--border)}
 .nav-label{padding:5px 14px;font-size:12px;font-weight:600;color:var(--fg);white-space:nowrap;border-left:1px solid var(--border);border-right:1px solid var(--border);min-width:180px;text-align:center}
+[hidden]{display:none!important}
 .custom-inputs{display:flex;align-items:center;gap:6px}
 .custom-inputs input[type=date]{
   background:var(--bg);border:1px solid var(--border);border-radius:var(--r-sm);
@@ -533,8 +534,15 @@ function setMode(m){
   render();
 }
 function applyCustom(){
-  cStart=document.getElementById('cStart').value;
-  cEnd  =document.getElementById('cEnd').value;
+  const s=document.getElementById('cStart').value;
+  const e=document.getElementById('cEnd').value;
+  if(!s||!e||s>e) return;
+  cStart=s; cEnd=e;
+  mode='custom';
+  document.querySelectorAll('.mode-btn').forEach((b,i)=>{
+    b.classList.toggle('active',['day','week','month','3m','custom'][i]==='custom');
+  });
+  document.getElementById('navGroup').hidden=true;
   render();
 }
 
