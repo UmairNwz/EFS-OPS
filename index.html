@@ -160,6 +160,30 @@ input,select{font-family:inherit}
 .alert-bar.info{background:var(--blue-a);color:var(--blue);border:1px solid rgba(37,99,235,.3)}
 .alert-icon{font-size:16px;flex-shrink:0}
 
+/* Fleet Health */
+.cohort-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.cohort-card{background:var(--surface);border-radius:var(--r);padding:16px 18px;border:1px solid var(--border);position:relative;overflow:hidden}
+.cohort-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:var(--bar-color,var(--border))}
+.cohort-month-lbl{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--fg3)}
+.cohort-total{font-size:30px;font-weight:700;font-family:'Space Grotesk',sans-serif;color:var(--fg);line-height:1.1;margin:4px 0 8px}
+.cohort-badges{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:10px}
+.cbadge{display:inline-flex;align-items:center;gap:3px;padding:2px 8px;border-radius:20px;font-size:10px;font-weight:600}
+.cbadge-blue{background:var(--blue-a);color:var(--blue)}
+.cbadge-green{background:var(--green-a);color:var(--green)}
+.cbadge-red{background:var(--red-a);color:var(--red)}
+.cbadge-amber{background:var(--amber-a);color:var(--amber)}
+.cohort-stats{display:flex;flex-direction:column;gap:3px}
+.cohort-stat-row{display:flex;justify-content:space-between;font-size:11px}
+.cohort-stat-row span:first-child{color:var(--fg3)}
+.cohort-stat-row span:last-child{font-weight:600;color:var(--fg2)}
+.pipeline-chart-wrap{margin-top:12px;display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.diagnosis-box{background:var(--red-a);border:1px solid rgba(227,30,36,.25);border-radius:var(--r);padding:16px 18px;font-size:12px;line-height:1.6;color:var(--fg2);margin-top:12px}
+.diagnosis-box strong{color:var(--fg)}
+.diag-row{display:flex;gap:16px;flex-wrap:wrap;margin-top:10px}
+.diag-item{flex:1;min-width:140px;background:var(--bg);border-radius:var(--r-sm);padding:10px 12px;border:1px solid var(--border)}
+.diag-item-val{font-size:18px;font-weight:700;color:var(--fg)}
+.diag-item-lbl{font-size:10px;color:var(--fg3);margin-top:1px}
+
 /* Footer */
 .footer{text-align:center;font-size:11px;color:var(--fg3);padding-bottom:28px}
 
@@ -167,6 +191,8 @@ input,select{font-family:inherit}
 @media(max-width:720px){
   .kpi-row{grid-template-columns:1fr 1fr}
   .insight-grid{grid-template-columns:1fr}
+  .cohort-grid{grid-template-columns:1fr}
+  .pipeline-chart-wrap{grid-template-columns:1fr}
   .day-detail{grid-template-columns:1fr 1fr}
 }
 @media(max-width:480px){
@@ -337,7 +363,40 @@ input,select{font-family:inherit}
     <div class="chart-wrap"><canvas id="effChart"></canvas></div>
   </div>
 
-  <div class="footer">Express Fleet Services · Chour Harpal, Main Peshawar Road, Rawalpindi · efsislamabad@gmail.com</div>
+  <!-- ━━ FLEET HEALTH ━━ -->
+  <div class="section-label" style="margin-top:24px">Fleet Health · Driver Pipeline</div>
+  <div id="cohortCards" class="cohort-grid" style="margin-top:8px"></div>
+  <div class="pipeline-chart-wrap">
+    <div class="chart-card">
+      <div class="chart-head">
+        <div>
+          <div class="chart-title">New Driver Inflow</div>
+          <div class="chart-desc" id="inflowDesc">First-time drivers per month</div>
+        </div>
+        <div class="chart-peak">
+          <div class="chart-peak-val" id="inflowPeak" style="color:var(--green)">—</div>
+          <div class="chart-peak-lbl">peak</div>
+        </div>
+      </div>
+      <div class="chart-wrap"><canvas id="inflowChart"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-head">
+        <div>
+          <div class="chart-title">Monthly Active Drivers</div>
+          <div class="chart-desc" id="maDesc">Unique drivers with any trip per month</div>
+        </div>
+        <div class="chart-peak">
+          <div class="chart-peak-val" id="maPeak" style="color:var(--blue)">—</div>
+          <div class="chart-peak-lbl">peak</div>
+        </div>
+      </div>
+      <div class="chart-wrap"><canvas id="maChart"></canvas></div>
+    </div>
+  </div>
+  <div class="diagnosis-box" id="diagnosisBox"></div>
+
+  <div class="footer" style="margin-top:24px">Express Fleet Services · Chour Harpal, Main Peshawar Road, Rawalpindi · efsislamabad@gmail.com</div>
 </div>
 
 <script>
@@ -424,9 +483,16 @@ const ALL = [
   {d:"2026-11-19",t:3467,dr:781,dt:596,g:1643058},
   {d:"2026-11-20",t:3202,dr:729,dt:567,g:1628710},
   {d:"2026-11-21",t:3094,dr:714,dt:536,g:1562365},
-  {d:"2026-11-22",t:2817,dr:627,dt:484,g:1499478}
+  {d:"2026-11-22",t:2837,dr:629,dt:484,g:1512793}
 ];
 const IDX = {}; ALL.forEach(r=>IDX[r.d]=r);
+
+const COHORT = [
+  {m:"2026-09",d:4353,r:null,n:4353,nr:1653,t:143136,days:30,avg:4771.2,cp:65.8},
+  {m:"2026-10",d:3464,r:2209,n:1255,nr:790,t:110689,days:30,avg:3689.6,cp:66.1},
+  {m:"2026-11",d:2602,r:1842,n:760,nr:399,t:73458,days:22,avg:3339.0,cp:64.0}
+];
+
 
 /* ━━ HELPERS ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
 const fmt  = n => n==null?'—':n.toLocaleString('en-PK');
@@ -910,6 +976,100 @@ function renderDOW(){
     </tr>`).join('')}</tbody>`;
 }
 
+/* ━━ FLEET HEALTH ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+function renderFleetHealth(){
+  if(!window.COHORT||!COHORT.length) return;
+
+  const MONTH_COLORS=['#E31E24','#b81219','#7a0c10','#4a0509'];
+
+  // ── Cohort cards ────────────────────────────────────────────────────────────
+  document.getElementById('cohortCards').innerHTML=COHORT.map((c,i)=>{
+    const prev=i>0?COHORT[i-1]:null;
+    const retPct=prev?Math.round(c.r/prev.d*100):null;
+    const lost=prev?prev.d-c.r:null;
+    const retBadge=retPct!=null
+      ?`<span class="cbadge ${retPct>=60?'cbadge-green':retPct>=40?'cbadge-amber':'cbadge-red'}">↩ ${retPct}% retained</span>`
+      :`<span class="cbadge cbadge-blue">Baseline</span>`;
+    const lostBadge=lost!=null
+      ?`<span class="cbadge cbadge-red">↓ ${fmt(lost)} lost</span>`:'';
+    const mLabel=new Date(c.m+'-02').toLocaleDateString('en-PK',{month:'long'});
+    const col=MONTH_COLORS[i]||'var(--border)';
+    return `<div class="cohort-card" style="--bar-color:${col}">
+      <div class="cohort-month-lbl">${mLabel} ${c.m.slice(0,4)}</div>
+      <div class="cohort-total">${fmt(c.d)}</div>
+      <div class="cohort-badges">
+        ${retBadge}
+        <span class="cbadge cbadge-green">+${fmt(c.n)} new</span>
+        ${lostBadge}
+      </div>
+      <div class="cohort-stats">
+        <div class="cohort-stat-row"><span>Avg trips/day</span><span>${fmt(Math.round(c.avg))}</span></div>
+        <div class="cohort-stat-row"><span>Total trips</span><span>${fmt(c.t)}</span></div>
+        <div class="cohort-stat-row"><span>Cancel rate</span><span>${c.cp}%</span></div>
+        <div class="cohort-stat-row"><span>Data days</span><span>${c.days}</span></div>
+      </div>
+    </div>`;
+  }).join('');
+
+  // ── New driver inflow bar chart ─────────────────────────────────────────────
+  const labels=COHORT.map(c=>new Date(c.m+'-02').toLocaleDateString('en-PK',{month:'short'}));
+  const inflowVals=COHORT.map(c=>c.nr||c.n);
+  const maVals=COHORT.map(c=>c.d);
+
+  drawChart('inflowChart','bar',labels,inflowVals,'#16a34a',{
+    yFmt:v=>fmtK(Math.round(v)),
+    tipFmt:v=>fmt(v)+' first-time drivers',
+  });
+  document.getElementById('inflowPeak').textContent=fmt(Math.max(...inflowVals));
+  document.getElementById('inflowDesc').textContent=
+    `${COHORT.length} months · ${fmt(COHORT.reduce((s,c)=>s+(c.nr||c.n),0))} new registrations total`;
+
+  drawChart('maChart','bar',labels,maVals,'#2563eb',{
+    yFmt:v=>fmtK(Math.round(v)),
+    yMin:0,
+    tipFmt:v=>fmt(v)+' active drivers',
+  });
+  document.getElementById('maPeak').textContent=fmt(Math.max(...maVals));
+  document.getElementById('maDesc').textContent=
+    `${COHORT.length} months · peak ${fmt(Math.max(...maVals))} drivers`;
+
+  // ── Diagnosis box ───────────────────────────────────────────────────────────
+  const first=COHORT[0], latest=COHORT[COHORT.length-1];
+  const driverDrop=Math.round((first.d-latest.d)/first.d*100);
+  const tripDrop=Math.round((first.avg-latest.avg)/first.avg*100);
+  const inflowDrop=COHORT.length>1?Math.round(((first.nr||first.n)-(latest.nr||latest.n))/(first.nr||first.n)*100):0;
+  const oct=COHORT[1];
+  const sep2octChurn=oct?Math.round((first.d-oct.r)/first.d*100):null;
+
+  document.getElementById('diagnosisBox').innerHTML=`
+    <strong>Diagnosis — Supply-side decline, not demand:</strong>
+    Active drivers fell <strong>${driverDrop}%</strong> from ${new Date(first.m+'-02').toLocaleDateString('en-PK',{month:'long'})} to ${new Date(latest.m+'-02').toLocaleDateString('en-PK',{month:'long'})}.
+    Drivers who remain are still productive — avg trips/day dropped only <strong>${tripDrop}%</strong> vs the driver count drop of ${driverDrop}%.
+    New driver registrations collapsed <strong>${inflowDrop}%</strong> (${fmt(first.nr||first.n)} → ${fmt(latest.nr||latest.n)}/month). Passengers are booking; the fleet is shrinking.
+    <div class="diag-row">
+      <div class="diag-item">
+        <div class="diag-item-val" style="color:var(--red)">${driverDrop}%</div>
+        <div class="diag-item-lbl">Driver count drop</div>
+      </div>
+      ${sep2octChurn!=null?`<div class="diag-item">
+        <div class="diag-item-val" style="color:var(--red)">${sep2octChurn}%</div>
+        <div class="diag-item-lbl">Sep→Oct churn rate</div>
+      </div>`:''}
+      <div class="diag-item">
+        <div class="diag-item-val" style="color:var(--red)">${inflowDrop}%</div>
+        <div class="diag-item-lbl">Pipeline collapse</div>
+      </div>
+      <div class="diag-item">
+        <div class="diag-item-val" style="color:var(--green)">${tripDrop}%</div>
+        <div class="diag-item-lbl">Trips/day drop (smaller)</div>
+      </div>
+      <div class="diag-item">
+        <div class="diag-item-val" style="color:var(--amber)">${latest.cp}%</div>
+        <div class="diag-item-lbl">Cancel rate (stable)</div>
+      </div>
+    </div>`;
+}
+
 /* ━━ NAV LABEL ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
 function updateNavLabel(){
   let lbl='';
@@ -1006,6 +1166,7 @@ function render(){
 /* ━━ INIT ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
 renderMonthBars();
 renderDOW();
+renderFleetHealth();
 render();
 </script>
 </body>
