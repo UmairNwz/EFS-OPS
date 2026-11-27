@@ -1,0 +1,1098 @@
+<!doctype html>
+<html data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Service Breakdown</title>
+<style>
+:root {
+  --bg:#f9fafb; --surface:#fff; --border:#e5e7eb;
+  --fg:#111827; --muted:#6b7280; --accent:#e31e24;
+  --seg-economy:#3b82f6; --seg-intercity:#7c3aed;
+  --seg-moto:#f97316; --seg-rickshaw:#d97706;
+  --seg-comfort:#059669; --seg-comfortplus:#0891b2;
+  --seg-cargo:#6b7280; --seg-minivan:#db2777;
+  font-size:14px; color-scheme:light;
+}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#111827; --surface:#1f2937; --border:#374151;
+  --fg:#f9fafb; --muted:#9ca3af; color-scheme:dark;
+}}
+:root[data-theme="dark"]{
+  --bg:#111827; --surface:#1f2937; --border:#374151;
+  --fg:#f9fafb; --muted:#9ca3af; color-scheme:dark;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--fg);font-family:system-ui,-apple-system,sans-serif;min-height:100vh}
+/* topbar */
+.topbar{background:#1a1a2e;color:#fff;padding:10px 20px;display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+.topbar-brand{font-weight:700;font-size:15px;color:#fff;text-decoration:none}
+.topbar-brand span{color:var(--accent)}
+.topbar-nav{display:flex;gap:4px;margin-left:auto}
+.nav-btn{padding:5px 14px;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;border:none;text-decoration:none;display:inline-block}
+.nav-btn.secondary{background:rgba(255,255,255,.12);color:#fff}
+.nav-btn.secondary:hover{background:rgba(255,255,255,.2)}
+.nav-btn.active{background:var(--accent);color:#fff}
+.topbar-sync{font-size:11px;color:rgba(255,255,255,.5);margin-left:auto}
+/* main */
+.main{padding:20px;max-width:1400px;margin:0 auto}
+/* controls */
+.controls{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:20px}
+.mode-group{display:flex;border:1px solid var(--border);border-radius:8px;overflow:hidden}
+.mode-btn{padding:6px 14px;font-size:12px;font-weight:600;cursor:pointer;background:transparent;border:none;color:var(--muted)}
+.mode-btn.on{background:var(--accent);color:#fff}
+.nav-arrow{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:5px 12px;cursor:pointer;font-size:14px;color:var(--fg)}
+.nav-arrow:hover{background:var(--border)}
+.period-label{font-weight:600;font-size:13px;min-width:120px;text-align:center}
+/* kpi row */
+.kpi-row{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:12px;margin-bottom:20px}
+.kpi-card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:14px 16px}
+.kpi-label{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);margin-bottom:4px}
+.kpi-value{font-size:22px;font-weight:700;line-height:1.1}
+.kpi-sub{font-size:11px;color:var(--muted);margin-top:3px}
+/* segment dot */
+.seg-dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:5px}
+/* charts grid */
+.charts-row{display:grid;grid-template-columns:1fr 300px;gap:16px;margin-bottom:20px}
+@media(max-width:700px){.charts-row{grid-template-columns:1fr}}
+.chart-card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:16px}
+.chart-title{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);margin-bottom:12px}
+canvas{width:100%!important}
+/* table */
+.seg-table-wrap{background:var(--surface);border:1px solid var(--border);border-radius:10px;overflow-x:auto;margin-bottom:20px}
+.seg-table{width:100%;border-collapse:collapse;font-size:13px}
+.seg-table th{padding:10px 14px;text-align:left;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);border-bottom:1px solid var(--border)}
+.seg-table td{padding:10px 14px;border-bottom:1px solid var(--border)}
+.seg-table tr:last-child td{border-bottom:none}
+.seg-table tr:hover td{background:rgba(0,0,0,.025)}
+.seg-name{display:flex;align-items:center;gap:6px;font-weight:600}
+.bar-cell{width:140px}
+.mini-bar{height:6px;border-radius:3px;background:var(--border);position:relative;overflow:hidden}
+.mini-bar-fill{height:100%;border-radius:3px;position:absolute;left:0;top:0}
+.text-right{text-align:right}
+.badge{display:inline-block;padding:2px 8px;border-radius:12px;font-size:11px;font-weight:600}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <a href="index.html" class="topbar-brand">Express <span>Fleet</span></a>
+  <div class="topbar-nav">
+    <a href="index.html" class="nav-btn secondary">Operations</a>
+    <a href="page2.html" class="nav-btn active">Service Breakdown</a>
+  </div>
+  <span class="topbar-sync" id="syncLabel">Data through Nov 27 · updated hourly</span>
+</div>
+
+<div class="main">
+  <div class="controls">
+    <div class="mode-group">
+      <button class="mode-btn" onclick="setMode('day')">Day</button>
+      <button class="mode-btn" onclick="setMode('week')">Week</button>
+      <button class="mode-btn on" onclick="setMode('month')">Month</button>
+    </div>
+    <button class="nav-arrow" onclick="shiftAnchor(-1)">&#8592;</button>
+    <span class="period-label" id="periodLabel">—</span>
+    <button class="nav-arrow" onclick="shiftAnchor(1)">&#8594;</button>
+  </div>
+
+  <div class="kpi-row" id="kpiRow"></div>
+
+  <div class="charts-row">
+    <div class="chart-card">
+      <div class="chart-title" id="trendTitle">Trip Trend by Segment</div>
+      <canvas id="trendChart" height="220"></canvas>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">Share of Trips</div>
+      <canvas id="donutChart" height="220"></canvas>
+    </div>
+  </div>
+
+  <div class="seg-table-wrap">
+    <table class="seg-table">
+      <thead>
+        <tr>
+          <th>Segment</th>
+          <th class="text-right">Trips</th>
+          <th class="text-right">Share</th>
+          <th class="bar-cell"></th>
+          <th class="text-right">Gross (PKR)</th>
+          <th class="text-right">Avg Fare</th>
+          <th class="text-right">Drivers</th>
+        </tr>
+      </thead>
+      <tbody id="segTableBody"></tbody>
+    </table>
+  </div>
+</div>
+
+<script>
+// ── data injected by update_data.py ─────────────────────────────────────────
+const SEG = [
+  {d:"2026-09-01",s:'Cargo',t:35,g:30142},
+  {d:"2026-09-01",s:'Comfort',t:132,g:69831},
+  {d:"2026-09-01",s:'Comfort+',t:100,g:47561},
+  {d:"2026-09-01",s:'Economy',t:1088,g:458920},
+  {d:"2026-09-01",s:'Intercity',t:2317,g:1151170},
+  {d:"2026-09-01",s:'Minivan',t:16,g:6883},
+  {d:"2026-09-01",s:'Moto',t:559,g:122526},
+  {d:"2026-09-01",s:'Rickshaw',t:650,g:287229},
+  {d:"2026-09-02",s:'Cargo',t:45,g:51603},
+  {d:"2026-09-02",s:'Comfort',t:119,g:54497},
+  {d:"2026-09-02",s:'Comfort+',t:111,g:47182},
+  {d:"2026-09-02",s:'Economy',t:1474,g:604645},
+  {d:"2026-09-02",s:'Intercity',t:2439,g:1105906},
+  {d:"2026-09-02",s:'Minivan',t:19,g:9773},
+  {d:"2026-09-02",s:'Moto',t:666,g:149929},
+  {d:"2026-09-02",s:'Rickshaw',t:736,g:285410},
+  {d:"2026-09-03",s:'Cargo',t:44,g:40491},
+  {d:"2026-09-03",s:'Comfort',t:118,g:55038},
+  {d:"2026-09-03",s:'Comfort+',t:77,g:29464},
+  {d:"2026-09-03",s:'Economy',t:1313,g:542462},
+  {d:"2026-09-03",s:'Intercity',t:2384,g:1129485},
+  {d:"2026-09-03",s:'Minivan',t:37,g:21838},
+  {d:"2026-09-03",s:'Moto',t:887,g:204872},
+  {d:"2026-09-03",s:'Rickshaw',t:862,g:327347},
+  {d:"2026-09-04",s:'Cargo',t:38,g:23924},
+  {d:"2026-09-04",s:'Comfort',t:80,g:44686},
+  {d:"2026-09-04",s:'Comfort+',t:83,g:36899},
+  {d:"2026-09-04",s:'Economy',t:1280,g:553899},
+  {d:"2026-09-04",s:'Intercity',t:2385,g:1159213},
+  {d:"2026-09-04",s:'Minivan',t:27,g:14071},
+  {d:"2026-09-04",s:'Moto',t:620,g:146799},
+  {d:"2026-09-04",s:'Rickshaw',t:758,g:319502},
+  {d:"2026-09-05",s:'Cargo',t:49,g:47230},
+  {d:"2026-09-05",s:'Comfort',t:73,g:38188},
+  {d:"2026-09-05",s:'Comfort+',t:59,g:32710},
+  {d:"2026-09-05",s:'Economy',t:1164,g:563669},
+  {d:"2026-09-05",s:'Intercity',t:2260,g:1146465},
+  {d:"2026-09-05",s:'Minivan',t:25,g:11735},
+  {d:"2026-09-05",s:'Moto',t:615,g:135315},
+  {d:"2026-09-05",s:'Rickshaw',t:547,g:257797},
+  {d:"2026-09-06",s:'Cargo',t:22,g:28780},
+  {d:"2026-09-06",s:'Comfort',t:65,g:37855},
+  {d:"2026-09-06",s:'Comfort+',t:65,g:32794},
+  {d:"2026-09-06",s:'Economy',t:955,g:500795},
+  {d:"2026-09-06",s:'Intercity',t:1884,g:1061900},
+  {d:"2026-09-06",s:'Minivan',t:25,g:18089},
+  {d:"2026-09-06",s:'Moto',t:550,g:127134},
+  {d:"2026-09-06",s:'Rickshaw',t:481,g:234512},
+  {d:"2026-09-07",s:'Cargo',t:43,g:23660},
+  {d:"2026-09-07",s:'Comfort',t:87,g:42010},
+  {d:"2026-09-07",s:'Comfort+',t:86,g:45638},
+  {d:"2026-09-07",s:'Economy',t:1305,g:600331},
+  {d:"2026-09-07",s:'Intercity',t:2563,g:1244869},
+  {d:"2026-09-07",s:'Minivan',t:21,g:11337},
+  {d:"2026-09-07",s:'Moto',t:773,g:181527},
+  {d:"2026-09-07",s:'Rickshaw',t:680,g:277111},
+  {d:"2026-09-08",s:'Cargo',t:49,g:23120},
+  {d:"2026-09-08",s:'Comfort',t:103,g:47399},
+  {d:"2026-09-08",s:'Comfort+',t:77,g:38188},
+  {d:"2026-09-08",s:'Economy',t:1321,g:571971},
+  {d:"2026-09-08",s:'Intercity',t:2553,g:1199130},
+  {d:"2026-09-08",s:'Minivan',t:17,g:3652},
+  {d:"2026-09-08",s:'Moto',t:869,g:187666},
+  {d:"2026-09-08",s:'Rickshaw',t:759,g:299758},
+  {d:"2026-09-09",s:'Cargo',t:38,g:18799},
+  {d:"2026-09-09",s:'Comfort',t:133,g:58472},
+  {d:"2026-09-09",s:'Comfort+',t:93,g:41906},
+  {d:"2026-09-09",s:'Economy',t:1231,g:516733},
+  {d:"2026-09-09",s:'Intercity',t:2400,g:1114165},
+  {d:"2026-09-09",s:'Minivan',t:31,g:8506},
+  {d:"2026-09-09",s:'Moto',t:854,g:185554},
+  {d:"2026-09-09",s:'Rickshaw',t:713,g:271619},
+  {d:"2026-09-10",s:'Cargo',t:57,g:43771},
+  {d:"2026-09-10",s:'Comfort',t:131,g:61886},
+  {d:"2026-09-10",s:'Comfort+',t:114,g:49693},
+  {d:"2026-09-10",s:'Economy',t:1213,g:557471},
+  {d:"2026-09-10",s:'Intercity',t:2338,g:1099857},
+  {d:"2026-09-10",s:'Minivan',t:23,g:4912},
+  {d:"2026-09-10",s:'Moto',t:796,g:176685},
+  {d:"2026-09-10",s:'Rickshaw',t:720,g:300723},
+  {d:"2026-09-11",s:'Cargo',t:40,g:15445},
+  {d:"2026-09-11",s:'Comfort',t:104,g:56675},
+  {d:"2026-09-11",s:'Comfort+',t:87,g:49153},
+  {d:"2026-09-11",s:'Economy',t:1042,g:487916},
+  {d:"2026-09-11",s:'Intercity',t:2165,g:1067797},
+  {d:"2026-09-11",s:'Minivan',t:26,g:7906},
+  {d:"2026-09-11",s:'Moto',t:574,g:134448},
+  {d:"2026-09-11",s:'Rickshaw',t:612,g:258829},
+  {d:"2026-09-12",s:'Cargo',t:46,g:44670},
+  {d:"2026-09-12",s:'Comfort',t:105,g:59384},
+  {d:"2026-09-12",s:'Comfort+',t:81,g:40826},
+  {d:"2026-09-12",s:'Economy',t:1089,g:534438},
+  {d:"2026-09-12",s:'Intercity',t:2090,g:1120552},
+  {d:"2026-09-12",s:'Minivan',t:35,g:8973},
+  {d:"2026-09-12",s:'Moto',t:574,g:126848},
+  {d:"2026-09-12",s:'Rickshaw',t:679,g:315621},
+  {d:"2026-09-13",s:'Cargo',t:27,g:50092},
+  {d:"2026-09-13",s:'Comfort',t:130,g:67404},
+  {d:"2026-09-13",s:'Comfort+',t:49,g:25090},
+  {d:"2026-09-13",s:'Economy',t:814,g:417727},
+  {d:"2026-09-13",s:'Intercity',t:1580,g:930165},
+  {d:"2026-09-13",s:'Minivan',t:28,g:10218},
+  {d:"2026-09-13",s:'Moto',t:470,g:119620},
+  {d:"2026-09-13",s:'Rickshaw',t:582,g:274020},
+  {d:"2026-09-14",s:'Cargo',t:43,g:27613},
+  {d:"2026-09-14",s:'Comfort',t:131,g:64907},
+  {d:"2026-09-14",s:'Comfort+',t:93,g:43449},
+  {d:"2026-09-14",s:'Economy',t:1264,g:574310},
+  {d:"2026-09-14",s:'Intercity',t:2476,g:1199618},
+  {d:"2026-09-14",s:'Minivan',t:25,g:8023},
+  {d:"2026-09-14",s:'Moto',t:755,g:166972},
+  {d:"2026-09-14",s:'Rickshaw',t:742,g:295240},
+  {d:"2026-09-15",s:'Cargo',t:45,g:15526},
+  {d:"2026-09-15",s:'Comfort',t:153,g:78339},
+  {d:"2026-09-15",s:'Comfort+',t:71,g:37683},
+  {d:"2026-09-15",s:'Economy',t:1186,g:598164},
+  {d:"2026-09-15",s:'Intercity',t:2275,g:1181540},
+  {d:"2026-09-15",s:'Minivan',t:13,g:5690},
+  {d:"2026-09-15",s:'Moto',t:556,g:130176},
+  {d:"2026-09-15",s:'Rickshaw',t:676,g:326296},
+  {d:"2026-09-16",s:'Cargo',t:86,g:33992},
+  {d:"2026-09-16",s:'Comfort',t:134,g:65388},
+  {d:"2026-09-16",s:'Comfort+',t:62,g:28992},
+  {d:"2026-09-16",s:'Economy',t:1265,g:541709},
+  {d:"2026-09-16",s:'Intercity',t:2112,g:998474},
+  {d:"2026-09-16",s:'Minivan',t:28,g:8678},
+  {d:"2026-09-16",s:'Moto',t:663,g:151528},
+  {d:"2026-09-16",s:'Rickshaw',t:651,g:257599},
+  {d:"2026-09-17",s:'Cargo',t:76,g:42722},
+  {d:"2026-09-17",s:'Comfort',t:152,g:72569},
+  {d:"2026-09-17",s:'Comfort+',t:82,g:37293},
+  {d:"2026-09-17",s:'Economy',t:1360,g:580488},
+  {d:"2026-09-17",s:'Intercity',t:2121,g:991257},
+  {d:"2026-09-17",s:'Minivan',t:21,g:5622},
+  {d:"2026-09-17",s:'Moto',t:696,g:153265},
+  {d:"2026-09-17",s:'Rickshaw',t:702,g:297338},
+  {d:"2026-09-18",s:'Cargo',t:80,g:33569},
+  {d:"2026-09-18",s:'Comfort',t:119,g:57004},
+  {d:"2026-09-18",s:'Comfort+',t:49,g:27411},
+  {d:"2026-09-18",s:'Economy',t:1416,g:631240},
+  {d:"2026-09-18",s:'Intercity',t:1864,g:886847},
+  {d:"2026-09-18",s:'Minivan',t:13,g:6743},
+  {d:"2026-09-18",s:'Moto',t:664,g:138672},
+  {d:"2026-09-18",s:'Rickshaw',t:521,g:230973},
+  {d:"2026-09-19",s:'Cargo',t:39,g:25681},
+  {d:"2026-09-19",s:'Comfort',t:130,g:63015},
+  {d:"2026-09-19",s:'Comfort+',t:70,g:35513},
+  {d:"2026-09-19",s:'Economy',t:1382,g:619158},
+  {d:"2026-09-19",s:'Intercity',t:2063,g:976336},
+  {d:"2026-09-19",s:'Minivan',t:33,g:11845},
+  {d:"2026-09-19",s:'Moto',t:795,g:167749},
+  {d:"2026-09-19",s:'Rickshaw',t:495,g:214305},
+  {d:"2026-09-20",s:'Cargo',t:27,g:24612},
+  {d:"2026-09-20",s:'Comfort',t:115,g:56907},
+  {d:"2026-09-20",s:'Comfort+',t:58,g:35856},
+  {d:"2026-09-20",s:'Economy',t:1082,g:506084},
+  {d:"2026-09-20",s:'Intercity',t:1409,g:724158},
+  {d:"2026-09-20",s:'Minivan',t:40,g:12279},
+  {d:"2026-09-20",s:'Moto',t:520,g:122306},
+  {d:"2026-09-20",s:'Rickshaw',t:488,g:239901},
+  {d:"2026-09-21",s:'Cargo',t:65,g:29891},
+  {d:"2026-09-21",s:'Comfort',t:108,g:51688},
+  {d:"2026-09-21",s:'Comfort+',t:79,g:39448},
+  {d:"2026-09-21",s:'Economy',t:1169,g:507631},
+  {d:"2026-09-21",s:'Intercity',t:1849,g:868864},
+  {d:"2026-09-21",s:'Minivan',t:6,g:1169},
+  {d:"2026-09-21",s:'Moto',t:717,g:163406},
+  {d:"2026-09-21",s:'Rickshaw',t:565,g:250135},
+  {d:"2026-09-22",s:'Cargo',t:48,g:32205},
+  {d:"2026-09-22",s:'Comfort',t:92,g:37368},
+  {d:"2026-09-22",s:'Comfort+',t:98,g:47480},
+  {d:"2026-09-22",s:'Economy',t:1150,g:502638},
+  {d:"2026-09-22",s:'Intercity',t:1823,g:821245},
+  {d:"2026-09-22",s:'Minivan',t:10,g:3056},
+  {d:"2026-09-22",s:'Moto',t:700,g:151818},
+  {d:"2026-09-22",s:'Rickshaw',t:541,g:224306},
+  {d:"2026-09-23",s:'Cargo',t:55,g:24500},
+  {d:"2026-09-23",s:'Comfort',t:71,g:31831},
+  {d:"2026-09-23",s:'Comfort+',t:121,g:61174},
+  {d:"2026-09-23",s:'Economy',t:1215,g:503033},
+  {d:"2026-09-23",s:'Intercity',t:1908,g:889772},
+  {d:"2026-09-23",s:'Minivan',t:14,g:4412},
+  {d:"2026-09-23",s:'Moto',t:727,g:157494},
+  {d:"2026-09-23",s:'Rickshaw',t:533,g:221732},
+  {d:"2026-09-24",s:'Cargo',t:71,g:39285},
+  {d:"2026-09-24",s:'Comfort',t:86,g:42834},
+  {d:"2026-09-24",s:'Comfort+',t:116,g:58584},
+  {d:"2026-09-24",s:'Economy',t:1086,g:485833},
+  {d:"2026-09-24",s:'Intercity',t:1762,g:807983},
+  {d:"2026-09-24",s:'Minivan',t:7,g:4878},
+  {d:"2026-09-24",s:'Moto',t:584,g:130048},
+  {d:"2026-09-24",s:'Rickshaw',t:566,g:244164},
+  {d:"2026-09-25",s:'Cargo',t:70,g:24463},
+  {d:"2026-09-25",s:'Comfort',t:82,g:37896},
+  {d:"2026-09-25",s:'Comfort+',t:90,g:46345},
+  {d:"2026-09-25",s:'Economy',t:964,g:441354},
+  {d:"2026-09-25",s:'Intercity',t:1499,g:700753},
+  {d:"2026-09-25",s:'Minivan',t:9,g:5847},
+  {d:"2026-09-25",s:'Moto',t:515,g:107950},
+  {d:"2026-09-25",s:'Rickshaw',t:483,g:198637},
+  {d:"2026-09-26",s:'Cargo',t:40,g:29420},
+  {d:"2026-09-26",s:'Comfort',t:86,g:40462},
+  {d:"2026-09-26",s:'Comfort+',t:73,g:36097},
+  {d:"2026-09-26",s:'Economy',t:902,g:394188},
+  {d:"2026-09-26",s:'Intercity',t:1503,g:730804},
+  {d:"2026-09-26",s:'Minivan',t:10,g:6456},
+  {d:"2026-09-26",s:'Moto',t:507,g:106618},
+  {d:"2026-09-26",s:'Rickshaw',t:427,g:173122},
+  {d:"2026-09-27",s:'Cargo',t:24,g:19643},
+  {d:"2026-09-27",s:'Comfort',t:76,g:43476},
+  {d:"2026-09-27",s:'Comfort+',t:49,g:25063},
+  {d:"2026-09-27",s:'Economy',t:756,g:355306},
+  {d:"2026-09-27",s:'Intercity',t:1239,g:644133},
+  {d:"2026-09-27",s:'Minivan',t:3,g:3558},
+  {d:"2026-09-27",s:'Moto',t:433,g:98356},
+  {d:"2026-09-27",s:'Rickshaw',t:370,g:164803},
+  {d:"2026-09-28",s:'Cargo',t:41,g:28978},
+  {d:"2026-09-28",s:'Comfort',t:136,g:58975},
+  {d:"2026-09-28",s:'Comfort+',t:103,g:56363},
+  {d:"2026-09-28",s:'Economy',t:1145,g:552356},
+  {d:"2026-09-28",s:'Intercity',t:1892,g:958974},
+  {d:"2026-09-28",s:'Minivan',t:19,g:13214},
+  {d:"2026-09-28",s:'Moto',t:451,g:108093},
+  {d:"2026-09-28",s:'Rickshaw',t:594,g:272330},
+  {d:"2026-09-29",s:'Cargo',t:70,g:31085},
+  {d:"2026-09-29",s:'Comfort',t:115,g:50967},
+  {d:"2026-09-29",s:'Comfort+',t:84,g:39350},
+  {d:"2026-09-29",s:'Economy',t:1059,g:435182},
+  {d:"2026-09-29",s:'Intercity',t:1881,g:873313},
+  {d:"2026-09-29",s:'Minivan',t:14,g:4932},
+  {d:"2026-09-29",s:'Moto',t:674,g:140575},
+  {d:"2026-09-29",s:'Rickshaw',t:651,g:244731},
+  {d:"2026-09-30",s:'Cargo',t:61,g:28530},
+  {d:"2026-09-30",s:'Comfort',t:96,g:44352},
+  {d:"2026-09-30",s:'Comfort+',t:68,g:29246},
+  {d:"2026-09-30",s:'Economy',t:1106,g:480387},
+  {d:"2026-09-30",s:'Intercity',t:1932,g:887074},
+  {d:"2026-09-30",s:'Minivan',t:3,g:2887},
+  {d:"2026-09-30",s:'Moto',t:665,g:145939},
+  {d:"2026-09-30",s:'Rickshaw',t:776,g:300891},
+  {d:"2026-10-01",s:'Cargo',t:28,g:23848},
+  {d:"2026-10-01",s:'Comfort',t:117,g:59984},
+  {d:"2026-10-01",s:'Comfort+',t:75,g:44520},
+  {d:"2026-10-01",s:'Economy',t:1027,g:485010},
+  {d:"2026-10-01",s:'Intercity',t:1910,g:911856},
+  {d:"2026-10-01",s:'Minivan',t:9,g:6388},
+  {d:"2026-10-01",s:'Moto',t:713,g:161794},
+  {d:"2026-10-01",s:'Rickshaw',t:693,g:300964},
+  {d:"2026-10-02",s:'Cargo',t:37,g:17708},
+  {d:"2026-10-02",s:'Comfort',t:63,g:43790},
+  {d:"2026-10-02",s:'Comfort+',t:62,g:35848},
+  {d:"2026-10-02",s:'Economy',t:1006,g:493994},
+  {d:"2026-10-02",s:'Intercity',t:1718,g:897331},
+  {d:"2026-10-02",s:'Minivan',t:2,g:5424},
+  {d:"2026-10-02",s:'Moto',t:542,g:124487},
+  {d:"2026-10-02",s:'Rickshaw',t:521,g:235450},
+  {d:"2026-10-03",s:'Cargo',t:25,g:32786},
+  {d:"2026-10-03",s:'Comfort',t:77,g:57297},
+  {d:"2026-10-03",s:'Comfort+',t:63,g:40050},
+  {d:"2026-10-03",s:'Economy',t:960,g:518772},
+  {d:"2026-10-03",s:'Intercity',t:1530,g:866768},
+  {d:"2026-10-03",s:'Minivan',t:6,g:1677},
+  {d:"2026-10-03",s:'Moto',t:538,g:127177},
+  {d:"2026-10-03",s:'Rickshaw',t:585,g:295692},
+  {d:"2026-10-04",s:'Cargo',t:18,g:34013},
+  {d:"2026-10-04",s:'Comfort',t:79,g:57669},
+  {d:"2026-10-04",s:'Comfort+',t:46,g:29324},
+  {d:"2026-10-04",s:'Economy',t:708,g:353466},
+  {d:"2026-10-04",s:'Intercity',t:1241,g:720986},
+  {d:"2026-10-04",s:'Minivan',t:3,g:996},
+  {d:"2026-10-04",s:'Moto',t:424,g:103724},
+  {d:"2026-10-04",s:'Rickshaw',t:365,g:181264},
+  {d:"2026-10-05",s:'Cargo',t:48,g:33031},
+  {d:"2026-10-05",s:'Comfort',t:101,g:49259},
+  {d:"2026-10-05",s:'Comfort+',t:72,g:50505},
+  {d:"2026-10-05",s:'Economy',t:1021,g:477603},
+  {d:"2026-10-05",s:'Intercity',t:1748,g:860977},
+  {d:"2026-10-05",s:'Minivan',t:4,g:732},
+  {d:"2026-10-05",s:'Moto',t:610,g:146428},
+  {d:"2026-10-05",s:'Rickshaw',t:508,g:205594},
+  {d:"2026-10-06",s:'Cargo',t:47,g:32421},
+  {d:"2026-10-06",s:'Comfort',t:138,g:67716},
+  {d:"2026-10-06",s:'Comfort+',t:57,g:37602},
+  {d:"2026-10-06",s:'Economy',t:1009,g:441517},
+  {d:"2026-10-06",s:'Intercity',t:1743,g:868735},
+  {d:"2026-10-06",s:'Minivan',t:4,g:2174},
+  {d:"2026-10-06",s:'Moto',t:546,g:129683},
+  {d:"2026-10-06",s:'Rickshaw',t:467,g:202300},
+  {d:"2026-10-07",s:'Cargo',t:49,g:33845},
+  {d:"2026-10-07",s:'Comfort',t:141,g:65489},
+  {d:"2026-10-07",s:'Comfort+',t:61,g:30670},
+  {d:"2026-10-07",s:'Economy',t:1024,g:437689},
+  {d:"2026-10-07",s:'Intercity',t:1811,g:878282},
+  {d:"2026-10-07",s:'Moto',t:618,g:142641},
+  {d:"2026-10-07",s:'Rickshaw',t:505,g:197947},
+  {d:"2026-10-08",s:'Cargo',t:45,g:35365},
+  {d:"2026-10-08",s:'Comfort',t:133,g:66616},
+  {d:"2026-10-08",s:'Comfort+',t:45,g:24168},
+  {d:"2026-10-08",s:'Economy',t:1126,g:514809},
+  {d:"2026-10-08",s:'Intercity',t:1811,g:916934},
+  {d:"2026-10-08",s:'Minivan',t:3,g:4280},
+  {d:"2026-10-08",s:'Moto',t:632,g:144197},
+  {d:"2026-10-08",s:'Rickshaw',t:491,g:207321},
+  {d:"2026-10-09",s:'Cargo',t:42,g:12098},
+  {d:"2026-10-09",s:'Comfort',t:97,g:53564},
+  {d:"2026-10-09",s:'Comfort+',t:68,g:41521},
+  {d:"2026-10-09",s:'Economy',t:882,g:438917},
+  {d:"2026-10-09",s:'Intercity',t:1460,g:787670},
+  {d:"2026-10-09",s:'Minivan',t:1,g:532},
+  {d:"2026-10-09",s:'Moto',t:467,g:113849},
+  {d:"2026-10-09",s:'Rickshaw',t:367,g:173011},
+  {d:"2026-10-11",s:'Cargo',t:38,g:30673},
+  {d:"2026-10-11",s:'Comfort',t:65,g:50378},
+  {d:"2026-10-11",s:'Comfort+',t:23,g:20917},
+  {d:"2026-10-11",s:'Economy',t:676,g:423318},
+  {d:"2026-10-11",s:'Intercity',t:930,g:624278},
+  {d:"2026-10-11",s:'Minivan',t:1,g:2395},
+  {d:"2026-10-11",s:'Moto',t:314,g:76726},
+  {d:"2026-10-11",s:'Rickshaw',t:291,g:184459},
+  {d:"2026-10-12",s:'Cargo',t:29,g:25038},
+  {d:"2026-10-12",s:'Comfort',t:133,g:66191},
+  {d:"2026-10-12",s:'Comfort+',t:26,g:14814},
+  {d:"2026-10-12",s:'Economy',t:941,g:474430},
+  {d:"2026-10-12",s:'Intercity',t:1584,g:825148},
+  {d:"2026-10-12",s:'Minivan',t:2,g:6825},
+  {d:"2026-10-12",s:'Moto',t:516,g:128768},
+  {d:"2026-10-12",s:'Rickshaw',t:413,g:182511},
+  {d:"2026-10-13",s:'Cargo',t:31,g:8123},
+  {d:"2026-10-13",s:'Comfort',t:149,g:77111},
+  {d:"2026-10-13",s:'Comfort+',t:63,g:34964},
+  {d:"2026-10-13",s:'Economy',t:1006,g:495819},
+  {d:"2026-10-13",s:'Intercity',t:1550,g:776080},
+  {d:"2026-10-13",s:'Minivan',t:0,g:0},
+  {d:"2026-10-13",s:'Moto',t:492,g:121953},
+  {d:"2026-10-13",s:'Rickshaw',t:487,g:213335},
+  {d:"2026-10-14",s:'Cargo',t:37,g:22064},
+  {d:"2026-10-14",s:'Comfort',t:111,g:66011},
+  {d:"2026-10-14",s:'Comfort+',t:49,g:26210},
+  {d:"2026-10-14",s:'Economy',t:953,g:471921},
+  {d:"2026-10-14",s:'Intercity',t:1684,g:843083},
+  {d:"2026-10-14",s:'Minivan',t:1,g:1973},
+  {d:"2026-10-14",s:'Moto',t:519,g:116953},
+  {d:"2026-10-14",s:'Rickshaw',t:389,g:162708},
+  {d:"2026-10-15",s:'Cargo',t:55,g:31142},
+  {d:"2026-10-15",s:'Comfort',t:84,g:51089},
+  {d:"2026-10-15",s:'Comfort+',t:62,g:41077},
+  {d:"2026-10-15",s:'Economy',t:886,g:431318},
+  {d:"2026-10-15",s:'Intercity',t:1712,g:928574},
+  {d:"2026-10-15",s:'Minivan',t:1,g:5165},
+  {d:"2026-10-15",s:'Moto',t:567,g:138239},
+  {d:"2026-10-15",s:'Rickshaw',t:400,g:179227},
+  {d:"2026-10-16",s:'Cargo',t:52,g:31185},
+  {d:"2026-10-16",s:'Comfort',t:95,g:54601},
+  {d:"2026-10-16",s:'Comfort+',t:46,g:25117},
+  {d:"2026-10-16",s:'Economy',t:856,g:477369},
+  {d:"2026-10-16",s:'Intercity',t:1609,g:924849},
+  {d:"2026-10-16",s:'Minivan',t:10,g:11434},
+  {d:"2026-10-16",s:'Moto',t:432,g:110582},
+  {d:"2026-10-16",s:'Rickshaw',t:503,g:216727},
+  {d:"2026-10-17",s:'Cargo',t:29,g:28519},
+  {d:"2026-10-17",s:'Comfort',t:109,g:69486},
+  {d:"2026-10-17",s:'Comfort+',t:46,g:26651},
+  {d:"2026-10-17",s:'Economy',t:795,g:465726},
+  {d:"2026-10-17",s:'Intercity',t:1530,g:927160},
+  {d:"2026-10-17",s:'Minivan',t:7,g:3454},
+  {d:"2026-10-17",s:'Moto',t:374,g:90155},
+  {d:"2026-10-17",s:'Rickshaw',t:453,g:199527},
+  {d:"2026-10-18",s:'Cargo',t:27,g:18102},
+  {d:"2026-10-18",s:'Comfort',t:88,g:64021},
+  {d:"2026-10-18",s:'Comfort+',t:23,g:15736},
+  {d:"2026-10-18",s:'Economy',t:645,g:411896},
+  {d:"2026-10-18",s:'Intercity',t:1282,g:839790},
+  {d:"2026-10-18",s:'Minivan',t:14,g:15079},
+  {d:"2026-10-18",s:'Moto',t:386,g:97695},
+  {d:"2026-10-18",s:'Rickshaw',t:330,g:175060},
+  {d:"2026-10-19",s:'Cargo',t:34,g:20506},
+  {d:"2026-10-19",s:'Comfort',t:84,g:53191},
+  {d:"2026-10-19",s:'Comfort+',t:61,g:37936},
+  {d:"2026-10-19",s:'Economy',t:920,g:464025},
+  {d:"2026-10-19",s:'Intercity',t:1584,g:848212},
+  {d:"2026-10-19",s:'Minivan',t:10,g:8746},
+  {d:"2026-10-19",s:'Moto',t:557,g:129586},
+  {d:"2026-10-19",s:'Rickshaw',t:380,g:162145},
+  {d:"2026-10-20",s:'Cargo',t:38,g:25921},
+  {d:"2026-10-20",s:'Comfort',t:98,g:50020},
+  {d:"2026-10-20",s:'Comfort+',t:56,g:30641},
+  {d:"2026-10-20",s:'Economy',t:850,g:420895},
+  {d:"2026-10-20",s:'Intercity',t:1603,g:798712},
+  {d:"2026-10-20",s:'Minivan',t:14,g:12734},
+  {d:"2026-10-20",s:'Moto',t:494,g:112465},
+  {d:"2026-10-20",s:'Rickshaw',t:422,g:169857},
+  {d:"2026-10-21",s:'Cargo',t:44,g:9250},
+  {d:"2026-10-21",s:'Comfort',t:106,g:57284},
+  {d:"2026-10-21",s:'Comfort+',t:59,g:32000},
+  {d:"2026-10-21",s:'Economy',t:802,g:386688},
+  {d:"2026-10-21",s:'Intercity',t:1586,g:794993},
+  {d:"2026-10-21",s:'Minivan',t:3,g:4216},
+  {d:"2026-10-21",s:'Moto',t:542,g:119599},
+  {d:"2026-10-21",s:'Rickshaw',t:478,g:178742},
+  {d:"2026-10-22",s:'Cargo',t:38,g:23780},
+  {d:"2026-10-22",s:'Comfort',t:101,g:50458},
+  {d:"2026-10-22",s:'Comfort+',t:46,g:26666},
+  {d:"2026-10-22",s:'Economy',t:909,g:443773},
+  {d:"2026-10-22",s:'Intercity',t:1621,g:865648},
+  {d:"2026-10-22",s:'Minivan',t:1,g:3579},
+  {d:"2026-10-22",s:'Moto',t:628,g:138604},
+  {d:"2026-10-22",s:'Rickshaw',t:436,g:167315},
+  {d:"2026-10-23",s:'Cargo',t:40,g:21361},
+  {d:"2026-10-23",s:'Comfort',t:104,g:50386},
+  {d:"2026-10-23",s:'Comfort+',t:49,g:29489},
+  {d:"2026-10-23",s:'Economy',t:853,g:431506},
+  {d:"2026-10-23",s:'Intercity',t:1534,g:838214},
+  {d:"2026-10-23",s:'Minivan',t:1,g:4676},
+  {d:"2026-10-23",s:'Moto',t:471,g:113345},
+  {d:"2026-10-23",s:'Rickshaw',t:438,g:173426},
+  {d:"2026-10-24",s:'Cargo',t:32,g:21828},
+  {d:"2026-10-24",s:'Comfort',t:110,g:71124},
+  {d:"2026-10-24",s:'Comfort+',t:56,g:41294},
+  {d:"2026-10-24",s:'Economy',t:791,g:473022},
+  {d:"2026-10-24",s:'Intercity',t:1599,g:949109},
+  {d:"2026-10-24",s:'Minivan',t:8,g:5210},
+  {d:"2026-10-24",s:'Moto',t:367,g:95214},
+  {d:"2026-10-24",s:'Rickshaw',t:443,g:214404},
+  {d:"2026-10-25",s:'Cargo',t:17,g:22285},
+  {d:"2026-10-25",s:'Comfort',t:99,g:62591},
+  {d:"2026-10-25",s:'Comfort+',t:31,g:26836},
+  {d:"2026-10-25",s:'Economy',t:609,g:387860},
+  {d:"2026-10-25",s:'Intercity',t:1268,g:844035},
+  {d:"2026-10-25",s:'Minivan',t:18,g:13327},
+  {d:"2026-10-25",s:'Moto',t:439,g:111435},
+  {d:"2026-10-25",s:'Rickshaw',t:306,g:168473},
+  {d:"2026-10-26",s:'Cargo',t:26,g:10662},
+  {d:"2026-10-26",s:'Comfort',t:120,g:57974},
+  {d:"2026-10-26",s:'Comfort+',t:51,g:30384},
+  {d:"2026-10-26",s:'Economy',t:872,g:432548},
+  {d:"2026-10-26",s:'Intercity',t:1773,g:955786},
+  {d:"2026-10-26",s:'Minivan',t:11,g:7498},
+  {d:"2026-10-26",s:'Moto',t:491,g:113022},
+  {d:"2026-10-26",s:'Rickshaw',t:532,g:211655},
+  {d:"2026-10-27",s:'Cargo',t:26,g:18625},
+  {d:"2026-10-27",s:'Comfort',t:124,g:60471},
+  {d:"2026-10-27",s:'Comfort+',t:48,g:27225},
+  {d:"2026-10-27",s:'Economy',t:908,g:429373},
+  {d:"2026-10-27",s:'Intercity',t:1681,g:858658},
+  {d:"2026-10-27",s:'Minivan',t:7,g:4871},
+  {d:"2026-10-27",s:'Moto',t:547,g:117701},
+  {d:"2026-10-27",s:'Rickshaw',t:440,g:177656},
+  {d:"2026-10-28",s:'Cargo',t:19,g:19400},
+  {d:"2026-10-28",s:'Comfort',t:134,g:64465},
+  {d:"2026-10-28",s:'Comfort+',t:72,g:40889},
+  {d:"2026-10-28",s:'Economy',t:991,g:473498},
+  {d:"2026-10-28",s:'Intercity',t:1838,g:915811},
+  {d:"2026-10-28",s:'Minivan',t:13,g:9226},
+  {d:"2026-10-28",s:'Moto',t:453,g:101149},
+  {d:"2026-10-28",s:'Rickshaw',t:452,g:186379},
+  {d:"2026-10-29",s:'Cargo',t:21,g:15736},
+  {d:"2026-10-29",s:'Comfort',t:132,g:63551},
+  {d:"2026-10-29",s:'Comfort+',t:71,g:47580},
+  {d:"2026-10-29",s:'Economy',t:1048,g:493439},
+  {d:"2026-10-29",s:'Intercity',t:1772,g:898563},
+  {d:"2026-10-29",s:'Minivan',t:3,g:626},
+  {d:"2026-10-29",s:'Moto',t:557,g:125824},
+  {d:"2026-10-29",s:'Rickshaw',t:414,g:183293},
+  {d:"2026-10-30",s:'Cargo',t:34,g:23241},
+  {d:"2026-10-30",s:'Comfort',t:117,g:71174},
+  {d:"2026-10-30",s:'Comfort+',t:51,g:36003},
+  {d:"2026-10-30",s:'Economy',t:1015,g:534490},
+  {d:"2026-10-30",s:'Intercity',t:1808,g:971108},
+  {d:"2026-10-30",s:'Minivan',t:2,g:1743},
+  {d:"2026-10-30",s:'Moto',t:430,g:98507},
+  {d:"2026-10-30",s:'Rickshaw',t:388,g:179602},
+  {d:"2026-10-31",s:'Cargo',t:18,g:14653},
+  {d:"2026-10-31",s:'Comfort',t:106,g:63183},
+  {d:"2026-10-31",s:'Comfort+',t:36,g:21504},
+  {d:"2026-10-31",s:'Economy',t:935,g:522625},
+  {d:"2026-10-31",s:'Intercity',t:1665,g:972123},
+  {d:"2026-10-31",s:'Minivan',t:8,g:5742},
+  {d:"2026-10-31",s:'Moto',t:467,g:110683},
+  {d:"2026-10-31",s:'Rickshaw',t:344,g:174717},
+  {d:"2026-11-01",s:'Cargo',t:9,g:17629},
+  {d:"2026-11-01",s:'Comfort',t:118,g:69168},
+  {d:"2026-11-01",s:'Comfort+',t:45,g:31848},
+  {d:"2026-11-01",s:'Economy',t:793,g:469420},
+  {d:"2026-11-01",s:'Intercity',t:1324,g:861783},
+  {d:"2026-11-01",s:'Minivan',t:9,g:6361},
+  {d:"2026-11-01",s:'Moto',t:328,g:85925},
+  {d:"2026-11-01",s:'Rickshaw',t:281,g:155503},
+  {d:"2026-11-02",s:'Cargo',t:28,g:17893},
+  {d:"2026-11-02",s:'Comfort',t:166,g:84874},
+  {d:"2026-11-02",s:'Comfort+',t:59,g:33748},
+  {d:"2026-11-02",s:'Economy',t:957,g:493790},
+  {d:"2026-11-02",s:'Intercity',t:1641,g:912543},
+  {d:"2026-11-02",s:'Minivan',t:2,g:3243},
+  {d:"2026-11-02",s:'Moto',t:474,g:111382},
+  {d:"2026-11-02",s:'Rickshaw',t:406,g:173417},
+  {d:"2026-11-03",s:'Cargo',t:38,g:13163},
+  {d:"2026-11-03",s:'Comfort',t:157,g:75026},
+  {d:"2026-11-03",s:'Comfort+',t:58,g:42097},
+  {d:"2026-11-03",s:'Economy',t:963,g:490841},
+  {d:"2026-11-03",s:'Intercity',t:1641,g:850205},
+  {d:"2026-11-03",s:'Minivan',t:6,g:4662},
+  {d:"2026-11-03",s:'Moto',t:477,g:113658},
+  {d:"2026-11-03",s:'Rickshaw',t:430,g:171908},
+  {d:"2026-11-04",s:'Cargo',t:41,g:19391},
+  {d:"2026-11-04",s:'Comfort',t:137,g:65842},
+  {d:"2026-11-04",s:'Comfort+',t:45,g:28702},
+  {d:"2026-11-04",s:'Economy',t:895,g:451797},
+  {d:"2026-11-04",s:'Intercity',t:1678,g:885865},
+  {d:"2026-11-04",s:'Minivan',t:2,g:2776},
+  {d:"2026-11-04",s:'Moto',t:513,g:122479},
+  {d:"2026-11-04",s:'Rickshaw',t:523,g:203650},
+  {d:"2026-11-05",s:'Cargo',t:37,g:23079},
+  {d:"2026-11-05",s:'Comfort',t:123,g:59594},
+  {d:"2026-11-05",s:'Comfort+',t:35,g:22463},
+  {d:"2026-11-05",s:'Economy',t:875,g:476641},
+  {d:"2026-11-05",s:'Intercity',t:1749,g:944219},
+  {d:"2026-11-05",s:'Minivan',t:6,g:4810},
+  {d:"2026-11-05",s:'Moto',t:443,g:109500},
+  {d:"2026-11-05",s:'Rickshaw',t:398,g:180500},
+  {d:"2026-11-06",s:'Cargo',t:63,g:33437},
+  {d:"2026-11-06",s:'Comfort',t:116,g:68151},
+  {d:"2026-11-06",s:'Comfort+',t:51,g:32134},
+  {d:"2026-11-06",s:'Economy',t:857,g:516061},
+  {d:"2026-11-06",s:'Intercity',t:1689,g:1012117},
+  {d:"2026-11-06",s:'Minivan',t:3,g:837},
+  {d:"2026-11-06",s:'Moto',t:415,g:105966},
+  {d:"2026-11-06",s:'Rickshaw',t:371,g:163154},
+  {d:"2026-11-07",s:'Cargo',t:32,g:24197},
+  {d:"2026-11-07",s:'Comfort',t:85,g:47750},
+  {d:"2026-11-07",s:'Comfort+',t:52,g:40604},
+  {d:"2026-11-07",s:'Economy',t:895,g:553051},
+  {d:"2026-11-07",s:'Intercity',t:1841,g:1180565},
+  {d:"2026-11-07",s:'Minivan',t:13,g:5675},
+  {d:"2026-11-07",s:'Moto',t:521,g:122843},
+  {d:"2026-11-07",s:'Rickshaw',t:369,g:187586},
+  {d:"2026-11-08",s:'Cargo',t:22,g:19881},
+  {d:"2026-11-08",s:'Comfort',t:75,g:51499},
+  {d:"2026-11-08",s:'Comfort+',t:40,g:33514},
+  {d:"2026-11-08",s:'Economy',t:738,g:465898},
+  {d:"2026-11-08",s:'Intercity',t:1305,g:915872},
+  {d:"2026-11-08",s:'Minivan',t:3,g:4070},
+  {d:"2026-11-08",s:'Moto',t:370,g:94523},
+  {d:"2026-11-08",s:'Rickshaw',t:333,g:197314},
+  {d:"2026-11-09",s:'Cargo',t:18,g:10709},
+  {d:"2026-11-09",s:'Comfort',t:58,g:34257},
+  {d:"2026-11-09",s:'Comfort+',t:24,g:15432},
+  {d:"2026-11-09",s:'Economy',t:719,g:411405},
+  {d:"2026-11-09",s:'Intercity',t:1293,g:793478},
+  {d:"2026-11-09",s:'Minivan',t:17,g:13224},
+  {d:"2026-11-09",s:'Moto',t:302,g:77038},
+  {d:"2026-11-09",s:'Rickshaw',t:336,g:168647},
+  {d:"2026-11-10",s:'Cargo',t:25,g:12201},
+  {d:"2026-11-10",s:'Comfort',t:74,g:43830},
+  {d:"2026-11-10",s:'Comfort+',t:65,g:40815},
+  {d:"2026-11-10",s:'Economy',t:778,g:426266},
+  {d:"2026-11-10",s:'Intercity',t:1669,g:899569},
+  {d:"2026-11-10",s:'Minivan',t:16,g:4672},
+  {d:"2026-11-10",s:'Moto',t:521,g:123723},
+  {d:"2026-11-10",s:'Rickshaw',t:451,g:187276},
+  {d:"2026-11-11",s:'Cargo',t:39,g:16666},
+  {d:"2026-11-11",s:'Comfort',t:96,g:49686},
+  {d:"2026-11-11",s:'Comfort+',t:44,g:27044},
+  {d:"2026-11-11",s:'Economy',t:844,g:423830},
+  {d:"2026-11-11",s:'Intercity',t:1538,g:788136},
+  {d:"2026-11-11",s:'Minivan',t:13,g:5030},
+  {d:"2026-11-11",s:'Moto',t:490,g:114944},
+  {d:"2026-11-11",s:'Rickshaw',t:390,g:154713},
+  {d:"2026-11-12",s:'Cargo',t:22,g:8696},
+  {d:"2026-11-12",s:'Comfort',t:121,g:62504},
+  {d:"2026-11-12",s:'Comfort+',t:44,g:28942},
+  {d:"2026-11-12",s:'Economy',t:892,g:518326},
+  {d:"2026-11-12",s:'Intercity',t:1688,g:994843},
+  {d:"2026-11-12",s:'Minivan',t:4,g:3078},
+  {d:"2026-11-12",s:'Moto',t:369,g:99595},
+  {d:"2026-11-12",s:'Rickshaw',t:326,g:137709},
+  {d:"2026-11-13",s:'Cargo',t:27,g:17443},
+  {d:"2026-11-13",s:'Comfort',t:122,g:60951},
+  {d:"2026-11-13",s:'Comfort+',t:47,g:32236},
+  {d:"2026-11-13",s:'Economy',t:874,g:489306},
+  {d:"2026-11-13",s:'Intercity',t:1472,g:821058},
+  {d:"2026-11-13",s:'Minivan',t:12,g:4253},
+  {d:"2026-11-13",s:'Moto',t:373,g:103192},
+  {d:"2026-11-13",s:'Rickshaw',t:333,g:141839},
+  {d:"2026-11-14",s:'Cargo',t:26,g:21952},
+  {d:"2026-11-14",s:'Comfort',t:102,g:61535},
+  {d:"2026-11-14",s:'Comfort+',t:40,g:25730},
+  {d:"2026-11-14",s:'Economy',t:877,g:476759},
+  {d:"2026-11-14",s:'Intercity',t:1440,g:833440},
+  {d:"2026-11-14",s:'Minivan',t:5,g:2552},
+  {d:"2026-11-14",s:'Moto',t:517,g:127956},
+  {d:"2026-11-14",s:'Rickshaw',t:378,g:161930},
+  {d:"2026-11-15",s:'Cargo',t:6,g:7692},
+  {d:"2026-11-15",s:'Comfort',t:72,g:45780},
+  {d:"2026-11-15",s:'Comfort+',t:53,g:32899},
+  {d:"2026-11-15",s:'Economy',t:738,g:447842},
+  {d:"2026-11-15",s:'Intercity',t:1123,g:644104},
+  {d:"2026-11-15",s:'Minivan',t:7,g:11516},
+  {d:"2026-11-15",s:'Moto',t:403,g:103485},
+  {d:"2026-11-15",s:'Rickshaw',t:297,g:147377},
+  {d:"2026-11-16",s:'Cargo',t:39,g:20010},
+  {d:"2026-11-16",s:'Comfort',t:120,g:55887},
+  {d:"2026-11-16",s:'Comfort+',t:42,g:26062},
+  {d:"2026-11-16",s:'Economy',t:840,g:462732},
+  {d:"2026-11-16",s:'Intercity',t:1392,g:753547},
+  {d:"2026-11-16",s:'Minivan',t:5,g:7603},
+  {d:"2026-11-16",s:'Moto',t:500,g:132834},
+  {d:"2026-11-16",s:'Rickshaw',t:425,g:171355},
+  {d:"2026-11-17",s:'Cargo',t:41,g:17437},
+  {d:"2026-11-17",s:'Comfort',t:134,g:61274},
+  {d:"2026-11-17",s:'Comfort+',t:43,g:24895},
+  {d:"2026-11-17",s:'Economy',t:801,g:413784},
+  {d:"2026-11-17",s:'Intercity',t:1378,g:731983},
+  {d:"2026-11-17",s:'Minivan',t:11,g:3892},
+  {d:"2026-11-17",s:'Moto',t:495,g:124984},
+  {d:"2026-11-17",s:'Rickshaw',t:396,g:159395},
+  {d:"2026-11-18",s:'Cargo',t:44,g:13863},
+  {d:"2026-11-18",s:'Comfort',t:122,g:56461},
+  {d:"2026-11-18",s:'Comfort+',t:43,g:31823},
+  {d:"2026-11-18",s:'Economy',t:834,g:429444},
+  {d:"2026-11-18",s:'Intercity',t:1435,g:730162},
+  {d:"2026-11-18",s:'Minivan',t:11,g:4362},
+  {d:"2026-11-18",s:'Moto',t:423,g:105427},
+  {d:"2026-11-18",s:'Rickshaw',t:377,g:143647},
+  {d:"2026-11-19",s:'Cargo',t:28,g:15698},
+  {d:"2026-11-19",s:'Comfort',t:119,g:52137},
+  {d:"2026-11-19",s:'Comfort+',t:39,g:23600},
+  {d:"2026-11-19",s:'Economy',t:880,g:457865},
+  {d:"2026-11-19",s:'Intercity',t:1523,g:816577},
+  {d:"2026-11-19",s:'Minivan',t:2,g:1328},
+  {d:"2026-11-19",s:'Moto',t:452,g:106043},
+  {d:"2026-11-19",s:'Rickshaw',t:421,g:167432},
+  {d:"2026-11-20",s:'Cargo',t:16,g:23028},
+  {d:"2026-11-20",s:'Comfort',t:135,g:73613},
+  {d:"2026-11-20",s:'Comfort+',t:49,g:33888},
+  {d:"2026-11-20",s:'Economy',t:791,g:439716},
+  {d:"2026-11-20",s:'Intercity',t:1436,g:798184},
+  {d:"2026-11-20",s:'Minivan',t:1,g:2389},
+  {d:"2026-11-20",s:'Moto',t:358,g:85178},
+  {d:"2026-11-20",s:'Rickshaw',t:412,g:170684},
+  {d:"2026-11-21",s:'Cargo',t:29,g:21083},
+  {d:"2026-11-21",s:'Comfort',t:109,g:57299},
+  {d:"2026-11-21",s:'Comfort+',t:36,g:20698},
+  {d:"2026-11-21",s:'Economy',t:754,g:399738},
+  {d:"2026-11-21",s:'Intercity',t:1352,g:785400},
+  {d:"2026-11-21",s:'Minivan',t:1,g:2077},
+  {d:"2026-11-21",s:'Moto',t:402,g:92933},
+  {d:"2026-11-21",s:'Rickshaw',t:404,g:178181},
+  {d:"2026-11-22",s:'Cargo',t:11,g:10941},
+  {d:"2026-11-22",s:'Comfort',t:89,g:62272},
+  {d:"2026-11-22",s:'Comfort+',t:38,g:26860},
+  {d:"2026-11-22",s:'Economy',t:669,g:360906},
+  {d:"2026-11-22",s:'Intercity',t:1344,g:791666},
+  {d:"2026-11-22",s:'Minivan',t:6,g:4629},
+  {d:"2026-11-22",s:'Moto',t:345,g:80854},
+  {d:"2026-11-22",s:'Rickshaw',t:320,g:167493},
+  {d:"2026-11-23",s:'Cargo',t:26,g:7610},
+  {d:"2026-11-23",s:'Comfort',t:113,g:47581},
+  {d:"2026-11-23",s:'Comfort+',t:49,g:33065},
+  {d:"2026-11-23",s:'Economy',t:681,g:357385},
+  {d:"2026-11-23",s:'Intercity',t:1256,g:664392},
+  {d:"2026-11-23",s:'Minivan',t:6,g:7184},
+  {d:"2026-11-23",s:'Moto',t:445,g:99277},
+  {d:"2026-11-23",s:'Rickshaw',t:379,g:154329},
+  {d:"2026-11-24",s:'Cargo',t:34,g:29360},
+  {d:"2026-11-24",s:'Comfort',t:121,g:49678},
+  {d:"2026-11-24",s:'Comfort+',t:36,g:22231},
+  {d:"2026-11-24",s:'Economy',t:700,g:340940},
+  {d:"2026-11-24",s:'Intercity',t:1182,g:601178},
+  {d:"2026-11-24",s:'Minivan',t:7,g:6477},
+  {d:"2026-11-24",s:'Moto',t:427,g:91379},
+  {d:"2026-11-24",s:'Rickshaw',t:435,g:168308},
+  {d:"2026-11-25",s:'Cargo',t:20,g:22213},
+  {d:"2026-11-25",s:'Comfort',t:117,g:49629},
+  {d:"2026-11-25",s:'Comfort+',t:14,g:7548},
+  {d:"2026-11-25",s:'Economy',t:782,g:375892},
+  {d:"2026-11-25",s:'Intercity',t:1383,g:694640},
+  {d:"2026-11-25",s:'Minivan',t:3,g:5300},
+  {d:"2026-11-25",s:'Moto',t:409,g:86112},
+  {d:"2026-11-25",s:'Rickshaw',t:377,g:149052},
+  {d:"2026-11-26",s:'Cargo',t:28,g:16704},
+  {d:"2026-11-26",s:'Comfort',t:100,g:43967},
+  {d:"2026-11-26",s:'Comfort+',t:39,g:28428},
+  {d:"2026-11-26",s:'Economy',t:760,g:354859},
+  {d:"2026-11-26",s:'Intercity',t:1360,g:690168},
+  {d:"2026-11-26",s:'Minivan',t:6,g:7104},
+  {d:"2026-11-26",s:'Moto',t:497,g:109968},
+  {d:"2026-11-26",s:'Rickshaw',t:392,g:152027},
+  {d:"2026-11-27",s:'Cargo',t:10,g:7131},
+  {d:"2026-11-27",s:'Comfort',t:47,g:17188},
+  {d:"2026-11-27",s:'Comfort+',t:15,g:10478},
+  {d:"2026-11-27",s:'Economy',t:458,g:212369},
+  {d:"2026-11-27",s:'Intercity',t:754,g:393346},
+  {d:"2026-11-27",s:'Minivan',t:0,g:0},
+  {d:"2026-11-27",s:'Moto',t:236,g:49526},
+  {d:"2026-11-27",s:'Rickshaw',t:218,g:88848}
+];
+const SEG_LATEST = "2026-11-27";
+// ────────────────────────────────────────────────────────────────────────────
+
+const SEGS = ["Economy","Intercity","Comfort+","Comfort","Moto","Rickshaw","Cargo","Minivan"];
+const SEG_COLORS = {
+  "Economy":"#3b82f6","Intercity":"#7c3aed","Moto":"#f97316","Rickshaw":"#d97706",
+  "Comfort":"#059669","Comfort+":"#0891b2","Cargo":"#6b7280","Minivan":"#db2777"
+};
+
+// Build lookup: IDX2[date][segment] = {t, g}
+const IDX2 = {};
+SEG.forEach(r => {
+  if(!IDX2[r.d]) IDX2[r.d] = {};
+  IDX2[r.d][r.s] = {t:r.t, g:r.g};
+});
+
+const ALL_DATES = [...new Set(SEG.map(r=>r.d))].sort();
+const LATEST = SEG_LATEST;
+
+function addDays(d,n){const dt=new Date(d+'T00:00:00');dt.setDate(dt.getDate()+n);return dt.toISOString().slice(0,10)}
+function getMonday(d){const dt=new Date(d+'T00:00:00');const day=dt.getDay();const diff=day===0?-6:1-day;dt.setDate(dt.getDate()+diff);return dt.toISOString().slice(0,10)}
+function fmtDate(d){const dt=new Date(d+'T00:00:00');return dt.toLocaleDateString('en-GB',{day:'numeric',month:'short'})}
+function fmtMonth(d){const dt=new Date(d+'T00:00:00');return dt.toLocaleDateString('en-GB',{month:'long',year:'numeric'})}
+function fmtM(n){if(n>=1e6)return (n/1e6).toFixed(2)+'M';if(n>=1e3)return (n/1e3).toFixed(0)+'K';return String(n)}
+function fmt(n){return n==null?'—':n.toLocaleString()}
+
+let mode = 'month';
+let anchor = LATEST.slice(0,7)+'-01';
+
+function setMode(m){
+  mode=m;
+  if(m==='day') anchor=LATEST;
+  else if(m==='week') anchor=getMonday(LATEST);
+  else anchor=LATEST.slice(0,7)+'-01';
+  document.querySelectorAll('.mode-btn').forEach(b=>b.classList.toggle('on',b.textContent.toLowerCase()===m));
+  render();
+}
+
+function shiftAnchor(dir){
+  if(mode==='day')      anchor=addDays(anchor,dir);
+  else if(mode==='week') anchor=addDays(anchor,dir*7);
+  else {
+    const dt=new Date(anchor+'T00:00:00');
+    dt.setMonth(dt.getMonth()+dir);
+    anchor=dt.toISOString().slice(0,7)+'-01';
+  }
+  render();
+}
+
+function getDatesForPeriod(){
+  if(mode==='day') return [anchor];
+  if(mode==='week'){
+    const days=[];
+    for(let i=0;i<7;i++) days.push(addDays(anchor,i));
+    return days;
+  }
+  // month
+  const ym=anchor.slice(0,7);
+  return ALL_DATES.filter(d=>d.startsWith(ym));
+}
+
+function aggregateForPeriod(dates){
+  const totals={};
+  SEGS.forEach(s=>totals[s]={t:0,g:0,dr:new Set()});
+  dates.forEach(d=>{
+    const day=IDX2[d]||{};
+    SEGS.forEach(s=>{
+      const v=day[s];
+      if(v){totals[s].t+=v.t;totals[s].g+=v.g;}
+    });
+  });
+  // convert sets (we don't track drivers here, just trips/gross)
+  return totals;
+}
+
+function getPeriodLabel(){
+  if(mode==='day') return fmtDate(anchor);
+  if(mode==='week') return fmtDate(anchor)+' – '+fmtDate(addDays(anchor,6));
+  return fmtMonth(anchor);
+}
+
+function render(){
+  document.getElementById('periodLabel').textContent=getPeriodLabel();
+  const dates=getDatesForPeriod();
+  const agg=aggregateForPeriod(dates);
+
+  const grandTotal=SEGS.reduce((s,sg)=>s+agg[sg].t,0);
+  const grandGross=SEGS.reduce((s,sg)=>s+agg[sg].g,0);
+
+  renderKPIs(agg, grandTotal, grandGross);
+  renderTable(agg, grandTotal);
+  renderTrend(dates);
+  renderDonut(agg, grandTotal);
+}
+
+function renderKPIs(agg, grandTotal, grandGross){
+  const avgFare=grandTotal>0?Math.round(grandGross/grandTotal):0;
+  // Sort segs by trip count
+  const sorted=[...SEGS].sort((a,b)=>agg[b].t-agg[a].t).filter(s=>agg[s].t>0);
+  const cards=[];
+  sorted.slice(0,4).forEach(s=>{
+    const pct=grandTotal>0?Math.round(agg[s].t/grandTotal*100):0;
+    cards.push(`<div class="kpi-card">
+      <div class="kpi-label"><span class="seg-dot" style="background:${SEG_COLORS[s]}"></span>${s}</div>
+      <div class="kpi-value">${fmt(agg[s].t)}</div>
+      <div class="kpi-sub">${pct}% · avg PKR ${fmt(agg[s].t?Math.round(agg[s].g/agg[s].t):0)}</div>
+    </div>`);
+  });
+  cards.push(`<div class="kpi-card">
+    <div class="kpi-label">Total Trips</div>
+    <div class="kpi-value">${fmt(grandTotal)}</div>
+    <div class="kpi-sub">PKR ${fmtM(grandGross)}</div>
+  </div>`);
+  cards.push(`<div class="kpi-card">
+    <div class="kpi-label">Avg Fare / Trip</div>
+    <div class="kpi-value">PKR ${fmt(avgFare)}</div>
+    <div class="kpi-sub">all segments combined</div>
+  </div>`);
+  document.getElementById('kpiRow').innerHTML=cards.join('');
+}
+
+function renderTable(agg, grandTotal){
+  const maxTrips=Math.max(...SEGS.map(s=>agg[s].t),1);
+  const sorted=[...SEGS].sort((a,b)=>agg[b].t-agg[a].t);
+  const rows=sorted.map(s=>{
+    const trips=agg[s].t, gross=agg[s].g;
+    const pct=grandTotal>0?(trips/grandTotal*100).toFixed(1):0;
+    const avg=trips>0?Math.round(gross/trips):0;
+    const barW=(trips/maxTrips*100).toFixed(1);
+    if(!trips) return '';
+    return `<tr>
+      <td class="seg-name"><span class="seg-dot" style="background:${SEG_COLORS[s]}"></span>${s}</td>
+      <td class="text-right">${fmt(trips)}</td>
+      <td class="text-right">${pct}%</td>
+      <td class="bar-cell"><div class="mini-bar"><div class="mini-bar-fill" style="width:${barW}%;background:${SEG_COLORS[s]}"></div></div></td>
+      <td class="text-right">${fmtM(gross)}</td>
+      <td class="text-right"><strong>PKR ${fmt(avg)}</strong></td>
+      <td class="text-right">—</td>
+    </tr>`;
+  });
+  document.getElementById('segTableBody').innerHTML=rows.join('');
+}
+
+// ── Canvas charts ─────────────────────────────────────────────────────────────
+const DPR=window.devicePixelRatio||1;
+function setupCanvas(id){
+  const c=document.getElementById(id);
+  const w=c.parentElement.clientWidth-32;
+  const h=parseInt(c.getAttribute('height'));
+  c.width=w*DPR; c.height=h*DPR;
+  c.style.width=w+'px'; c.style.height=h+'px';
+  const ctx=c.getContext('2d');
+  ctx.scale(DPR,DPR);
+  return {ctx,w,h};
+}
+
+function getStyle(v){return getComputedStyle(document.documentElement).getPropertyValue(v).trim();}
+
+function renderDonut(agg, grandTotal){
+  const {ctx,w,h}=setupCanvas('donutChart');
+  const segsWithData=[...SEGS].filter(s=>agg[s].t>0).sort((a,b)=>agg[b].t-agg[a].t);
+  const cx=w/2, cy=h*0.45, r=Math.min(cx,cy)*0.75, ir=r*0.55;
+  let angle=-Math.PI/2;
+  const fg=getStyle('--fg');
+  const muted=getStyle('--muted');
+  segsWithData.forEach(s=>{
+    const slice=(agg[s].t/grandTotal)*Math.PI*2;
+    ctx.beginPath();
+    ctx.moveTo(cx,cy);
+    ctx.arc(cx,cy,r,angle,angle+slice);
+    ctx.closePath();
+    ctx.fillStyle=SEG_COLORS[s];
+    ctx.fill();
+    angle+=slice;
+  });
+  // inner hole
+  ctx.beginPath();
+  ctx.arc(cx,cy,ir,0,Math.PI*2);
+  ctx.fillStyle=getStyle('--surface');
+  ctx.fill();
+  // center label
+  ctx.fillStyle=fg;
+  ctx.font=`bold ${Math.round(ir*0.5)}px system-ui`;
+  ctx.textAlign='center';
+  ctx.textBaseline='middle';
+  ctx.fillText(fmt(grandTotal),cx,cy-6);
+  ctx.font=`${Math.round(ir*0.28)}px system-ui`;
+  ctx.fillStyle=muted;
+  ctx.fillText('trips',cx,cy+ir*0.3);
+  // legend
+  const legY=h*0.86;
+  const legX=w*0.05;
+  const cols=Math.min(segsWithData.length,4);
+  const colW=w/cols;
+  segsWithData.slice(0,cols).forEach((s,i)=>{
+    const x=legX+i*colW;
+    ctx.fillStyle=SEG_COLORS[s];
+    ctx.beginPath();ctx.arc(x+5,legY,4,0,Math.PI*2);ctx.fill();
+    ctx.fillStyle=muted;
+    ctx.font='10px system-ui';ctx.textAlign='left';
+    ctx.fillText(s,x+13,legY+4);
+  });
+  if(segsWithData.length>4){
+    segsWithData.slice(4).forEach((s,i)=>{
+      const x=legX+i*colW;
+      ctx.fillStyle=SEG_COLORS[s];
+      ctx.beginPath();ctx.arc(x+5,legY+16,4,0,Math.PI*2);ctx.fill();
+      ctx.fillStyle=muted;
+      ctx.fillText(s,x+13,legY+20);
+    });
+  }
+}
+
+function renderTrend(dates){
+  if(!dates.length) return;
+  const {ctx,w,h}=setupCanvas('trendChart');
+  const MT=20,MB=30,ML=48,MR=12;
+  const cW=w-ML-MR, cH=h-MT-MB;
+  const fg=getStyle('--fg');
+  const muted=getStyle('--muted');
+  const border=getStyle('--border');
+  const segsWithData=[...SEGS].filter(s=>dates.some(d=>IDX2[d]&&IDX2[d][s]&&IDX2[d][s].t>0));
+  if(!segsWithData.length) return;
+  // For many dates: stacked bars; for few: grouped or lines
+  const n=dates.length;
+  const slotW=cW/Math.max(n,1);
+  // find max total per day
+  let maxTotal=1;
+  dates.forEach(d=>{
+    const tot=segsWithData.reduce((s,sg)=>s+(IDX2[d]&&IDX2[d][sg]?IDX2[d][sg].t:0),0);
+    if(tot>maxTotal) maxTotal=tot;
+  });
+  // draw grid lines
+  ctx.strokeStyle=border; ctx.lineWidth=1; ctx.setLineDash([2,3]);
+  for(let i=0;i<=4;i++){
+    const y=MT+cH*(1-i/4);
+    ctx.beginPath();ctx.moveTo(ML,y);ctx.lineTo(ML+cW,y);ctx.stroke();
+    ctx.fillStyle=muted;ctx.font='10px system-ui';ctx.textAlign='right';
+    ctx.fillText(fmt(Math.round(maxTotal*i/4)),ML-4,y+3);
+  }
+  ctx.setLineDash([]);
+  // stacked bars
+  dates.forEach((d,i)=>{
+    const x=ML+i*slotW;
+    const bw=Math.max(slotW*0.72,1);
+    const xc=x+(slotW-bw)/2;
+    let yOff=0;
+    segsWithData.forEach(s=>{
+      const v=IDX2[d]&&IDX2[d][s]?IDX2[d][s].t:0;
+      if(!v) return;
+      const bh=(v/maxTotal)*cH;
+      const yTop=MT+cH-yOff-bh;
+      ctx.fillStyle=SEG_COLORS[s];
+      ctx.fillRect(xc,yTop,bw,bh);
+      yOff+=bh;
+    });
+    // x label
+    if(n<=14 || i%Math.ceil(n/7)===0){
+      ctx.fillStyle=muted;ctx.font='10px system-ui';ctx.textAlign='center';
+      const lbl=n===1?fmtDate(d):n<=7?['Mon','Tue','Wed','Thu','Fri','Sat','Sun'][new Date(d+'T00:00:00').getDay()]:fmtDate(d);
+      ctx.fillText(lbl,x+slotW/2,h-MB+14);
+    }
+  });
+  // tooltip on hover handled separately if needed (skip for now — keep it simple)
+}
+
+render();
+window.addEventListener('resize',()=>render());
+</script>
+</body>
+</html>
